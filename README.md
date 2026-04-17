@@ -1,245 +1,63 @@
-# LockSchool — Educational Lock Picking Platform
+# LockSchool — Live Lock Picking Education Platform
 
 > The craft of picking locks, taught well.
 
-A premium content discovery platform aggregating locksport and lock picking educational resources. Built for hobbyists, security researchers, and the endlessly curious.
+A premium content aggregator for locksport and lock picking education. Pulls **real, live content** from YouTube channels, RSS feeds, and blogs — updated hourly, zero manual curation required.
 
 ---
 
-## 🚀 Deploy to Vercel in 60 seconds
+## 🚀 Deploy to Vercel (2 minutes)
 
 ```bash
 # 1. Push to GitHub
-git init && git add . && git commit -m "Initial LockSchool build"
+git init && git add . && git commit -m "LockSchool v1"
 gh repo create lockschool --public --push
 
-# 2. Deploy (or drag folder into vercel.com/new)
+# 2. Deploy
 npx vercel --prod
 ```
+
+**Or:** Drag this folder into [vercel.com/new](https://vercel.com/new) — zero config needed.
+
+**Optional (recommended):** Add `YOUTUBE_API_KEY` in Vercel → Project Settings → Environment Variables for richer video metadata (view counts, durations). See `.env.example` for setup instructions. Without it, YouTube RSS still works and returns real videos.
 
 ---
 
 ## 📦 Local Development
 
 ```bash
+cp .env.example .env.local   # add YOUTUBE_API_KEY if you have one
 npm install
-npm run dev    # http://localhost:3000
-npm run build  # production build check
+npm run dev                  # http://localhost:3000
 ```
 
 ---
 
-## 🏗 Product Vision
+## 🔴 Live Content Sources
 
-LockSchool is a **modern learning magazine / media library hybrid** for the locksport community. It aggregates curated educational content from YouTube, blogs, Medium, RSS feeds, and community sources into a single, beautifully designed discovery platform. The product prioritizes ethical framing, discoverability, and reading/watching experience over raw volume.
+Content is fetched automatically from these real sources:
 
-**Core promise:** Less searching, more learning.
-
----
-
-## 📋 Product Requirements Document (PRD)
-
-### Problem Statement
-Lock picking education is fragmented across YouTube channels, subreddits, personal blogs, and conference talks. Beginners don't know where to start. Intermediate learners can't find what they're missing. Advanced practitioners have no curated library.
-
-### Target Users
-1. Beginners — curious hobbyists who want to understand how locks work
-2. Intermediate learners — people who've picked a few locks and want to go deeper
-3. Advanced practitioners — locksport competitors, security researchers, locksmiths
-4. Security professionals — physical security assessors doing authorized red team work
-
-### Core Features (v1)
-
-| Feature | Status |
+### YouTube Channels (via RSS — no API key needed)
+| Channel | Focus |
 |---|---|
-| Homepage with hero, featured content, collections, topics | Done |
-| Explore page with full filter/search system | Done |
-| Video library with embedded player + fallback | Done |
-| Article library with in-app reader | Done |
-| Topic browsing (12 categories) | Done |
-| Save/bookmark resources | Done |
-| Mark as watched/read | Done |
-| Related content suggestions | Done |
-| About / ethics page | Done |
-| Responsive layout | Done |
+| The Lock Picking Lawyer | All levels, massive library |
+| BosnianBill | Detailed lock analysis |
+| LockNoob | Beginner-friendly walkthroughs |
+| Deviant Ollam | Physical security, red team |
 
----
-
-## 🎨 Design Direction
-
-### Visual Identity
-**Tone:** Editorial dark luxury — like a premium magazine printed on black paper.
-
-**Palette:**
-- Background: #0E0D0B (near-black warm)
-- Surface: #1F1E1A (card backgrounds)
-- Text: #F0EDE6 (warm off-white)
-- Accent: #C9A84C (warm gold)
-- Green: #5AAF7A (beginner level)
-- Blue: #6B8ED4 (articles)
-- Red: #C96B6B (advanced/warnings)
-
-**Typography:**
-- Display: Playfair Display (editorial serif for headings)
-- Body: DM Sans (clean, modern, readable)
-- Mono: DM Mono (tags, metadata, labels)
-
-**Signature details:**
-- Film grain overlay at 2.5% opacity
-- Dot-grid hero background
-- 3px top border stripes on collection cards
-- Staggered fade-up animations on content load
-
----
-
-## 🏛 Information Architecture
-
-```
-LockSchool
-├── / (Home)
-│   ├── Hero section
-│   ├── Featured resources
-│   ├── Curated collections
-│   ├── Browse by topic
-│   └── Recent resources
-├── /explore  (search + filter grid)
-├── /videos
-│   └── /videos/[id]  (embedded player + related)
-├── /articles
-│   └── /articles/[id]  (in-app reader + related)
-├── /topics
-│   └── /topics/[tag]  (resources by topic)
-├── /saved
-└── /about  (ethics + community links)
-```
-
----
-
-## ⚙️ Technical Architecture
-
-### Stack
-| Layer | Choice |
+### Blogs & Feeds
+| Source | Type |
 |---|---|
-| Framework | Next.js 15 App Router |
-| Language | TypeScript |
-| Styling | CSS Custom Properties + inline styles |
-| Icons | Lucide React |
-| Deployment | Vercel |
+| Art of Lock Picking | Blog/guides |
+| r/lockpicking | Community posts |
+| Medium (locksport tag) | Articles |
 
-### Data Model
-
-```typescript
-interface Resource {
-  id: string;
-  title: string;
-  author: string;
-  sourceName: string;
-  sourceType: 'youtube' | 'blog' | 'medium' | 'rss' | 'other';
-  url: string;
-  publishDate: string;
-  tags: TopicTag[];
-  contentType: 'video' | 'article';
-  skillLevel: 'beginner' | 'intermediate' | 'advanced';
-  thumbnail: string;
-  embedUrl?: string;
-  canEmbed: boolean;
-  duration?: string;
-  readTime?: string;
-  description: string;
-  excerpt?: string;
-  views?: number;
-  saves?: number;
-  featured?: boolean;
-}
-```
-
-### Backend Scale Path
-
-**Option A — Headless CMS:** Sanity.io or Contentful with the Resource schema above. Editors can add/curate content through a GUI with ISR revalidation.
-
-**Option B — Database:**
-```sql
-CREATE TABLE resources (id, title, author, source_type, url, content_type, skill_level, thumbnail, embed_url, can_embed, description, excerpt, views, saves, featured, created_at);
-CREATE TABLE tags (id, slug, label, color);
-CREATE TABLE resource_tags (resource_id, tag_id);
-CREATE TABLE users (id, email, created_at);
-CREATE TABLE saved_items (user_id, resource_id, saved_at);
-CREATE TABLE watch_history (user_id, resource_id, completed, watched_at);
-CREATE TABLE source_connectors (id, name, type, config JSONB, last_synced);
-```
-
-### API Design
-
-```
-GET  /api/resources          Search + filter (query, type, level, tags, source, sort, page)
-GET  /api/resources/:id      Single resource detail
-GET  /api/tags               All topic tags
-GET  /api/tags/:slug/resources
-GET  /api/collections
-POST /api/saved              Save resource (auth)
-DELETE /api/saved/:id        Unsave (auth)
-GET  /api/saved              User saved list (auth)
-POST /api/history            Mark watched/read (auth)
-POST /api/connectors/sync    Trigger source sync (admin)
-```
-
----
-
-## 🗺 Implementation Roadmap
-
-### Phase 1 — Foundation (Complete)
-- All core pages built and functional
-- Design system with CSS custom properties
-- 12 mock resources across all content types
-- Filter and search system
-- Responsive navigation
-- Vercel deployment config
-
-### Phase 2 — Content & Auth
-- Sanity.io or Contentful CMS integration
-- 50-100 real curated resources
-- User auth with NextAuth.js
-- Persistent saved items
-- Watch/read history tracking
-
-### Phase 3 — Discovery
-- Full-text search (Algolia or Postgres FTS)
-- YouTube Data API auto-ingestion connector
-- RSS feed connector
-- SEO: sitemap.xml, JSON-LD, per-page meta
-- Open Graph images per resource
-
-### Phase 4 — Community
-- User ratings and upvotes
-- Comments / notes on resources
-- Learning path completion tracking
-- Locksport news feed
-- Mobile PWA
-
----
-
-## ✅ Build Priority Checklist
-
-### Pre-launch
-- [x] All core pages functional
-- [x] Mobile responsive layout
-- [x] Video embeds with fallback
-- [x] Article reader with excerpt
-- [x] Ethics page in nav
-- [x] Clean TypeScript build
-
-### Before real users
-- [ ] Replace mock data with 30+ real curated resources
-- [ ] Open Graph meta tags per page
-- [ ] Analytics (Vercel Analytics)
-- [ ] next/image for optimized thumbnails
-- [ ] Accessibility audit
-
-### For scale
-- [ ] CMS integration
-- [ ] Auth + saved items persistence
-- [ ] Search indexing
-- [ ] Source ingestion pipeline
+### How It Works
+1. On first request, the API fetches all sources in parallel
+2. Content is cached in memory for **1 hour**
+3. Auto-tagging engine reads titles to assign topic tags and skill levels
+4. Subsequent requests are served instantly from cache
+5. Add `YOUTUBE_API_KEY` for full view counts, durations, and HD thumbnails
 
 ---
 
@@ -248,40 +66,101 @@ POST /api/connectors/sync    Trigger source sync (admin)
 ```
 src/
 ├── app/
-│   ├── layout.tsx
-│   ├── page.tsx
-│   ├── globals.css
-│   ├── not-found.tsx
-│   ├── explore/page.tsx
-│   ├── videos/page.tsx + [id]/page.tsx
-│   ├── articles/page.tsx + [id]/page.tsx
-│   ├── topics/page.tsx + [tag]/page.tsx
+│   ├── api/
+│   │   └── resources/
+│   │       ├── route.ts          ← Main aggregation API (search, filter, cache)
+│   │       └── [id]/route.ts     ← Single resource + related content
+│   ├── page.tsx                  ← Homepage (live most-watched + recent)
+│   ├── explore/page.tsx          ← Full search + filter UI
+│   ├── videos/
+│   │   ├── page.tsx              ← Video library
+│   │   └── [id]/page.tsx         ← Video detail + embedded player
+│   ├── articles/
+│   │   ├── page.tsx              ← Article library
+│   │   └── [id]/page.tsx         ← Article detail + in-app reader
+│   ├── topics/
+│   │   ├── page.tsx              ← Topic index with live counts
+│   │   └── [tag]/page.tsx        ← Topic detail
 │   ├── saved/page.tsx
-│   └── about/page.tsx
+│   ├── about/page.tsx
+│   └── globals.css               ← Design system + CSS variables
 ├── components/
-│   ├── Nav.tsx
-│   └── ResourceCard.tsx
+│   ├── Nav.tsx                   ← Sticky responsive navigation
+│   ├── ResourceCard.tsx          ← 3-variant content card
+│   └── LoadingStates.tsx         ← Skeletons, error states, empty states
 └── lib/
-    └── data.ts
+    ├── aggregator.ts             ← YouTube RSS + Data API + RSS feed fetchers
+    ├── data.ts                   ← Types, topic taxonomy, filter logic
+    └── hooks.ts                  ← useResources, useResource client hooks
 ```
 
 ---
 
-## 🔒 Ethical Framework
+## ⚙️ Architecture
 
-**Included content criteria:**
-- Locksport hobbyist content and tutorials
-- Security research and conference talks (DEF CON, physical security tracks)
-- Professional locksmith education
-- Community resources (r/lockpicking wiki, TOOOL guides)
+```
+Browser → Next.js page (client component)
+              ↓ fetch
+         /api/resources?q=...&type=video&level=beginner
+              ↓ if cache miss (>1hr)
+         aggregateAllContent()
+              ├── fetchYouTubeChannelRSS() × 4 channels
+              ├── fetchRSSFeed() × 3 feeds
+              └── fetchYouTubeChannel() × 4  (only if YOUTUBE_API_KEY set)
+              ↓
+         deduplicateResources()
+              ↓
+         filterResources() + paginate
+              ↓
+         JSON response → ResourceCard grid
+```
 
-**Excluded:**
-- Content teaching unauthorized security bypass
-- Instructions for defeating electronic/alarm systems
-- Any content targeting unauthorized real-world entry
+### Adding More Sources
 
-Every page includes ethics framing or links to the About page. Community golden rules are prominently displayed.
+**New YouTube channel** — add one object to `YOUTUBE_CHANNELS` in `src/lib/aggregator.ts`:
+```ts
+{
+  channelId: 'UC...',
+  channelHandle: 'ChannelName',
+  authorName: 'Display Name',
+  defaultTags: ['pin-tumblers', 'theory'],
+  defaultSkillLevel: 'intermediate',
+}
+```
+
+**New RSS/blog feed** — add one object to `RSS_FEEDS`:
+```ts
+{
+  url: 'https://yourblog.com/feed/',
+  sourceName: 'Your Blog',
+  sourceType: 'blog',
+  author: 'Author Name',
+  defaultTags: ['theory'],
+  defaultSkillLevel: 'beginner',
+}
+```
+
+That's it. No schema migrations, no code changes beyond these configs.
 
 ---
 
-*LockSchool — For the curious. For the careful. For the craft.*
+## 🎨 Design System
+
+**Palette:** Warm dark background (#0E0D0B) with gold accent (#C9A84C)
+**Typography:** Playfair Display (headings) + DM Sans (body) + DM Mono (labels)
+**Details:** Film grain overlay, dot-grid hero, staggered fade-up animations
+
+All design tokens live in CSS custom properties in `globals.css`. Change the accent color in one place to retheme the entire site.
+
+---
+
+## 🔒 Ethics
+
+This platform aggregates educational content for:
+- Locksport hobbyists
+- Security professionals doing authorized work
+- Locksmiths and students
+
+**Never pick a lock you don't own or don't have permission to pick.**
+
+Content is sourced exclusively from established educational creators. The About page prominently features community ethics guidelines.
